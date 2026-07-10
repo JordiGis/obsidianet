@@ -1,0 +1,8 @@
+# Secrets
+.env
+
+# Persistent container data (vaults + obsidian config)
+/data/
+
+# OS junk
+.DS_Store
