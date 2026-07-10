@@ -1,67 +1,56 @@
 # obsidianet
 
-Self-hosted Obsidian server in Docker. Runs the full Obsidian desktop app in your
-browser via [obsidian-remote](https://github.com/sytone/obsidian-remote) (KasmVNC),
-so you can reach the same vault from **any device** — laptop, phone, tablet — with
-just a browser and a **login**. No per-device install, no plugin setup.
+Self-hosted, **Notion-style notes app** in Docker, powered by
+[Docmost](https://github.com/docmost/docmost). Open it in any browser — laptop,
+phone, tablet — log in, and edit. Sidebar with nested pages, block editor with a
+slash `/` menu, emoji icons, real-time editing. No app install per device.
 
-## Why this approach
+## Stack
 
-| Option | Access | Login | Per-device install |
-|--------|--------|-------|--------------------|
-| **obsidian-remote (this repo)** | Any browser | ✅ built-in | ❌ none |
-| Obsidian LiveSync + CouchDB | Native app only | ✅ | ✅ app + plugin each device |
+- **docmost** — the app (NestJS + React, Tiptap block editor)
+- **db** — PostgreSQL 16
+- **redis** — cache / websockets
 
-You picked "access from any device with login" → obsidian-remote fits best.
+All in `docker-compose.yml`. Data persists in named volumes.
 
-## Quick start
+## Setup
 
 ```bash
-# 1. Configure
 cp .env.example .env
-#   edit .env -> set OBSIDIAN_USER and a strong OBSIDIAN_PASSWORD
+#   set APP_SECRET   -> openssl rand -hex 32
+#   set DB_PASSWORD  -> openssl rand -hex 16
+#   APP_URL          -> how clients reach it, e.g. http://Mac-2.local:3000
 
-# 2. Launch
 docker compose up -d
-
-# 3. Open
-#   http://<host-ip>:8080     (or https://<host-ip>:8443)
-#   log in with OBSIDIAN_USER / OBSIDIAN_PASSWORD
 ```
 
-First launch: Obsidian opens in the browser. Create/open a vault under `/vaults`
-(mapped to `./data/vaults` on the host).
+Open **http://localhost:3000** (this machine) or **http://Mac-2.local:3000**
+(any device on the LAN). First visit shows a **setup page** — create your admin
+account + workspace there. Auth is built in.
 
-## Data
-
-| Container path | Host path | Contents |
-|----------------|-----------|----------|
-| `/vaults` | `./data/vaults` | Your notes (the vault) |
-| `/config` | `./data/config` | Obsidian app config, plugins, layout |
-
-Both are git-ignored. Back up `./data/` to keep your notes safe.
-
-## Access from outside your network
-
-The container only exposes HTTP/HTTPS on the host. To reach it from the internet,
-**do not** port-forward it raw. Put it behind one of:
-
-- A reverse proxy with TLS (Caddy / Traefik / nginx) + the built-in login.
-- A VPN / [Tailscale](https://tailscale.com) — reach the host privately, no public exposure.
-
-The built-in login is basic-auth over KasmVNC; always add TLS before exposing it.
+`.env` is git-ignored (holds `APP_SECRET` + DB password).
 
 ## Commands
 
 ```bash
 docker compose up -d        # start
-docker compose logs -f      # watch logs
-docker compose down         # stop
-docker compose pull         # update image, then `up -d` again
+docker compose ps           # status
+docker compose logs -f      # logs
+docker compose down         # stop (data persists in volumes)
+docker compose pull && docker compose up -d   # update
 ```
 
-## Notes
+## Data & backup
 
-- `shm_size: 1gb` and `seccomp:unconfined` are needed for the in-container browser render.
-- `PUID`/`PGID` should match the host user that owns `./data` (`id -u` / `id -g`).
-- Change `TZ` in `.env` to your timezone.
+Docker named volumes: `docmost_storage` (uploads), `db_data` (Postgres),
+`redis_data`. Back up with `pg_dump`:
+
+```bash
+docker compose exec db pg_dump -U docmost docmost > backup.sql
+```
+
+## Access from outside your LAN
+
+Do **not** port-forward raw. Put it behind TLS (Caddy/Traefik) or a VPN /
+[Tailscale](https://tailscale.com). If you expose a public domain, set `APP_URL`
+to `https://your-domain` and terminate TLS at the proxy.

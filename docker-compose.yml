@@ -1,25 +1,49 @@
 services:
-  obsidian:
-    image: ghcr.io/sytone/obsidian-remote:latest
-    container_name: obsidianet
-    restart: unless-stopped
-    ports:
-      - "${HTTP_PORT:-8080}:8080"   # HTTP  -> http://host:8080
-      - "${HTTPS_PORT:-8443}:8443"  # HTTPS -> https://host:8443
+  docmost:
+    image: docmost/docmost:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      PUID: ${PUID:-1000}
-      PGID: ${PGID:-1000}
-      TZ: ${TZ:-Europe/Madrid}
-      DOCKER_MODS: linuxserver/mods:universal-git
-      # Login for the web UI (KasmVNC basic auth)
-      CUSTOM_USER: ${OBSIDIAN_USER}
-      PASSWORD: ${OBSIDIAN_PASSWORD}
-      # KasmVNC display sizing
-      KEYBOARD: en-us-qwerty
+      APP_URL: "${APP_URL:-http://localhost:3000}"
+      APP_SECRET: "${APP_SECRET}"
+      DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost?schema=public"
+      REDIS_URL: "redis://redis:6379"
+    ports:
+      - "${PORT:-3000}:3000"
+    restart: unless-stopped
     volumes:
-      - ./data/vaults:/vaults
-      - ./data/config:/config
-    # obsidian-remote needs a bit of shared memory for the browser/render
-    shm_size: "1gb"
-    security_opt:
-      - seccomp:unconfined
+      - docmost_storage:/app/data/storage
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: docmost
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "docmost", "-d", "docmost"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - redis_data:/data
+
+volumes:
+  docmost_storage:
+  db_data:
+  redis_data:

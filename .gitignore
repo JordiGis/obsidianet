@@ -1,8 +1,5 @@
-# Secrets
+# Secrets — real config with generated passwords/keys
 .env
-
-# Persistent container data (vaults + obsidian config)
-/data/
 
 # OS junk
 .DS_Store
