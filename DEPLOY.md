@@ -138,6 +138,43 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 - Docmost image = `latest`; pin a version tag if you want reproducible updates.
 - The admin app rebuilds from source on `--build`.
 
+## 9b. Auto-deploy on push (GitHub Actions)
+
+`.github/workflows/deploy.yml` redeploys automatically on every push to `main`
+(and can be run manually from the Actions tab). It SSHes into the VPS and runs
+`git reset --hard origin/main` + `docker compose ... up -d --build`.
+
+**One-time setup:**
+
+1. On the VPS, create a dedicated SSH key for CI and authorize it:
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/ci_deploy -N ""
+   cat ~/.ssh/ci_deploy.pub >> ~/.ssh/authorized_keys
+   cat ~/.ssh/ci_deploy            # copy this PRIVATE key for the secret below
+   ```
+   Make sure this VPS user is in the `docker` group and the repo is already
+   cloned at some path (e.g. `/home/deploy/obsidianet`) with `.env` present.
+
+2. In the GitHub repo → **Settings → Secrets and variables → Actions**, add:
+
+   | Secret | Value |
+   |--------|-------|
+   | `VPS_HOST` | VPS IP or hostname |
+   | `VPS_USER` | SSH user (in the `docker` group) |
+   | `VPS_SSH_KEY` | the **private** key printed above (`~/.ssh/ci_deploy`) |
+   | `VPS_PATH` | repo path on the VPS, e.g. `/home/deploy/obsidianet` |
+   | `VPS_PORT` | SSH port (optional, default `22`) |
+
+3. Push to `main` → watch it deploy under the repo's **Actions** tab.
+
+Notes:
+- The repo is public, so the VPS pulls over HTTPS with no git credentials. For a
+  private repo, add a GitHub **deploy key** on the VPS and use the SSH remote.
+- `.env` on the VPS is untouched (git-ignored; `reset --hard` never deletes
+  untracked files).
+- To deploy from a different branch, change `branches: [main]` and the
+  `origin/main` reset target in the workflow.
+
 ## 10. Troubleshooting
 
 | Symptom | Check |
