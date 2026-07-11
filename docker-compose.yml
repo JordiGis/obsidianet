@@ -1,4 +1,5 @@
 services:
+  # ─────────────────────────── Docmost (user app, login #1) ──────────────────
   docmost:
     image: docmost/docmost:latest
     depends_on:
@@ -7,15 +8,34 @@ services:
       redis:
         condition: service_healthy
     environment:
-      APP_URL: "${APP_URL:-http://localhost:3000}"
+      APP_URL: "${APP_URL:-http://Mac-2.local:3000}"
       APP_SECRET: "${APP_SECRET}"
       DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost?schema=public"
       REDIS_URL: "redis://redis:6379"
     ports:
-      - "${PORT:-3000}:3000"
+      - "${DOCMOST_PORT:-3000}:3000"
     restart: unless-stopped
     volumes:
       - docmost_storage:/app/data/storage
+
+  # ──────────────────── Admin panel (Notion-styled, login #2) ─────────────────
+  admin:
+    build: ./admin
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost"
+      ADMIN_USER: "${ADMIN_USER}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      ADMIN_JWT_SECRET: "${ADMIN_JWT_SECRET}"
+      DOCMOST_URL: "${APP_URL:-http://Mac-2.local:3000}"
+      STORAGE_PATH: "/docmost-storage"
+    ports:
+      - "${ADMIN_PORT:-8888}:3000"
+    restart: unless-stopped
+    volumes:
+      - docmost_storage:/docmost-storage:ro
 
   db:
     image: postgres:16-alpine

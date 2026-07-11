@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  background: #ffffff;
+  color: #37352f;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Notion-ish scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #e3e2de; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #d3d2cd; }

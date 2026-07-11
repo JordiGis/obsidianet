@@ -1,5 +1,10 @@
-# Secrets — real config with generated passwords/keys
+# Secrets
 .env
+
+# Admin app build artifacts
+/admin/node_modules/
+/admin/.next/
+/admin/next-env.d.ts
 
 # OS junk
 .DS_Store
