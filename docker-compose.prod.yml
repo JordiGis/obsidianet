@@ -1,0 +1,28 @@
+# Production override. Use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Adds Caddy (auto-HTTPS) as the ONLY public entry. App/db ports stay on
+# 127.0.0.1 (set BIND_ADDR=127.0.0.1: in .env) so they are never public.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - docmost
+      - admin
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NOTES_DOMAIN: "${NOTES_DOMAIN}"
+      ADMIN_DOMAIN: "${ADMIN_DOMAIN}"
+      ACME_EMAIL: "${ACME_EMAIL}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

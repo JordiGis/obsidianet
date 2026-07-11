@@ -1,0 +1,14 @@
+# Auto-HTTPS reverse proxy (Let's Encrypt). Domains + email come from .env.
+{
+	email {$ACME_EMAIL}
+}
+
+# Notes app (users)
+{$NOTES_DOMAIN} {
+	reverse_proxy docmost:3000
+}
+
+# Admin panel (admin only)
+{$ADMIN_DOMAIN} {
+	reverse_proxy admin:3000
+}

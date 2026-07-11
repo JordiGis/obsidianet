@@ -13,7 +13,7 @@ services:
       DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost?schema=public"
       REDIS_URL: "redis://redis:6379"
     ports:
-      - "${DOCMOST_PORT:-3000}:3000"
+      - "${BIND_ADDR:-}${DOCMOST_PORT:-3000}:3000"
     restart: unless-stopped
     volumes:
       - docmost_storage:/app/data/storage
@@ -31,8 +31,9 @@ services:
       ADMIN_JWT_SECRET: "${ADMIN_JWT_SECRET}"
       DOCMOST_URL: "${APP_URL:-http://Mac-2.local:3000}"
       STORAGE_PATH: "/docmost-storage"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
     ports:
-      - "${ADMIN_PORT:-8888}:3000"
+      - "${BIND_ADDR:-}${ADMIN_PORT:-8888}:3000"
     restart: unless-stopped
     volumes:
       - docmost_storage:/docmost-storage:ro
