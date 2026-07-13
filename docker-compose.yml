@@ -22,7 +22,10 @@
 services:
   # ─────────────────────────── Docmost (notes app) ───────────────────────────
   docmost:
-    image: docmost/docmost:latest
+    image: obsidianet:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.rebrand
     depends_on:
       db:
         condition: service_healthy

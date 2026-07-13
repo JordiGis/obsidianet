@@ -1,0 +1,21 @@
+# Obsidianet — custom-branded build of Docmost
+# Replaces all "Docmost" branding with "Obsidianet" and overlays custom favicons/icons.
+
+FROM docmost/docmost:latest
+
+USER root
+
+# ── 1. Replace all "Docmost" text with "Obsidianet" ──
+# Handles: index.html title, manifest.json name, all React UI strings, locale translations
+RUN sed -i 's/Docmost/Obsidianet/g' /app/apps/client/dist/index.html \
+    && sed -i 's/Docmost/Obsidianet/g' /app/apps/client/dist/manifest.json \
+    && find /app/apps/client/dist/assets -name 'index-*.js' -exec sed -i 's/Docmost/Obsidianet/g' {} + \
+    && find /app/apps/client/dist/locales -name 'translation.json' -exec sed -i 's/Docmost/Obsidianet/g' {} +
+
+# ── 2. Overlay custom favicon / app icons ──
+COPY custom-brand/icons/     /app/apps/client/dist/icons/
+COPY custom-brand/manifest.json  /app/apps/client/dist/manifest.json
+COPY custom-brand/obsidianet.svg /app/apps/client/dist/vite.svg
+
+# ── 3. Restore non-root user ──
+USER node
