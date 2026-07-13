@@ -1,5 +1,26 @@
+# Coolify-native compose. Single file — Coolify loads ONLY this one.
+#
+# Deploy fast:
+#   1. Coolify → New Resource → Docker Compose (Public Repository) → this repo, branch main
+#   2. Build Pack: Docker Compose | Location: /docker-compose.yml
+#   3. Set the env vars below in Coolify → Environment Variables tab.
+#   4. Deploy.
+#
+# Env vars to set in Coolify UI (Coolify injects them via --env-file):
+#   DB_PASSWORD          (required)  openssl rand -hex 16
+#   APP_SECRET           (required)  openssl rand -hex 32
+#   ADMIN_JWT_SECRET     (required)  openssl rand -hex 32
+#   ADMIN_PASSWORD       (required)  your admin login password
+#   ADMIN_USER           (optional)  defaults to "admin"
+#   APP_URL              (required)  public https URL of the notes app,
+#                                    e.g. https://notes.tudominio.com
+#
+# Domains: set the public domain on the "docmost" (and "admin") service in
+# Coolify's UI (Configuration → Domains). Coolify wires Traefik + HTTPS.
+# No Caddy, no host ports. Old docker-compose.prod.yml + Caddyfile unused.
+
 services:
-  # ─────────────────────────── Docmost (user app, login #1) ──────────────────
+  # ─────────────────────────── Docmost (notes app) ───────────────────────────
   docmost:
     image: docmost/docmost:latest
     depends_on:
@@ -8,12 +29,10 @@ services:
       redis:
         condition: service_healthy
     environment:
-      APP_URL: "${APP_URL:-http://Mac-2.local:3000}"
+      APP_URL: "${APP_URL}"
       APP_SECRET: "${APP_SECRET}"
       DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost?schema=public"
       REDIS_URL: "redis://redis:6379"
-    ports:
-      - "${BIND_ADDR:-}${DOCMOST_PORT:-3000}:3000"
     restart: unless-stopped
     volumes:
       - docmost_storage:/app/data/storage
@@ -26,14 +45,12 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost"
-      ADMIN_USER: "${ADMIN_USER}"
+      ADMIN_USER: "${ADMIN_USER:-admin}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
       ADMIN_JWT_SECRET: "${ADMIN_JWT_SECRET}"
-      DOCMOST_URL: "${APP_URL:-http://Mac-2.local:3000}"
+      DOCMOST_URL: "${APP_URL}"
       STORAGE_PATH: "/docmost-storage"
-      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
-    ports:
-      - "${BIND_ADDR:-}${ADMIN_PORT:-8888}:3000"
+      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
     restart: unless-stopped
     volumes:
       - docmost_storage:/docmost-storage:ro
