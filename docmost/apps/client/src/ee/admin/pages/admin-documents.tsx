@@ -43,7 +43,8 @@ export default function AdminDocuments() {
   }
 
   useEffect(() => {
-    load();
+    console.log("AdminDocuments: mounted");
+    load().then(() => console.log("AdminDocuments: data loaded", pages.length, "pages"));
   }, []);
 
   return (
@@ -52,6 +53,12 @@ export default function AdminDocuments() {
         <title>Admin Documents - {getAppName()}</title>
       </Helmet>
       <SettingsTitle title="Documents" />
+
+      {/* DIAGNOSTIC: Always visible */}
+      <Text size="sm" c="green" fw={700} mb="md">
+        ✅ AdminDocuments component RENDERED at {new Date().toISOString()}
+      </Text>
+
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 16 }}>
         <Button size="sm" onClick={load} loading={loading}>
           Refresh

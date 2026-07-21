@@ -142,6 +142,18 @@ export class AdminController {
     return this.adminService.listPages(workspace.id);
   }
 
+  // ─────────────────────────── storage per user ──────────────────────────────
+
+  @HttpCode(HttpStatus.OK)
+  @Post('storage-by-user')
+  async getStorageByUser(
+    @AuthUser() user: User,
+    @AuthWorkspace() workspace: Workspace,
+  ) {
+    this.checkAdmin(user);
+    return this.adminService.storageByUser(workspace.id);
+  }
+
   // ─────────────────────────── files / attachments ───────────────────────────
 
   @HttpCode(HttpStatus.OK)

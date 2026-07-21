@@ -15,9 +15,7 @@ import {
   IconSparkles,
   IconHistory,
   IconShieldCheck,
-  IconLayoutDashboard,
-  IconFileText,
-  IconFolder,
+  IconDatabase,
 } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router-dom";
 import classes from "./settings.module.css";
@@ -102,6 +100,12 @@ const groupedData: DataGroup[] = [
       { label: "Spaces", icon: IconSpaces, path: "/settings/spaces" },
       { label: "Public sharing", icon: IconWorld, path: "/settings/sharing" },
       {
+        label: "Storage",
+        icon: IconDatabase,
+        path: "/settings/storage",
+        role: "admin",
+      },
+      {
         label: "Verified pages",
         icon: IconShieldCheck,
         path: "/settings/verifications",
@@ -140,35 +144,6 @@ const groupedData: DataGroup[] = [
       },
     ],
   },
-  {
-    heading: "Admin",
-    items: [
-      {
-        label: "Dashboard",
-        icon: IconLayoutDashboard,
-        path: "/settings/admin/dashboard",
-        role: "admin",
-      },
-      {
-        label: "Users",
-        icon: IconUsers,
-        path: "/settings/admin/users",
-        role: "admin",
-      },
-      {
-        label: "Documents",
-        icon: IconFileText,
-        path: "/settings/admin/documents",
-        role: "admin",
-      },
-      {
-        label: "Files",
-        icon: IconFolder,
-        path: "/settings/admin/files",
-        role: "admin",
-      },
-    ],
-  },
 ];
 
 export default function SettingsSidebar() {
@@ -204,10 +179,6 @@ export default function SettingsSidebar() {
 
   const menuItems = groupedData.map((group) => {
     if (group.heading === "System" && (!isAdmin || isCloud())) {
-      return null;
-    }
-
-    if (group.heading === "Admin" && (!isAdmin || isCloud())) {
       return null;
     }
 

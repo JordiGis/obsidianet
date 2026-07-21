@@ -295,6 +295,27 @@ export class AdminService {
       .execute();
   }
 
+  // ─────────────────────────── storage per user ─────────────────────────────
+  async storageByUser(workspaceId: string) {
+    return this.db
+      .selectFrom('attachments')
+      .leftJoin('users', 'users.id', 'attachments.creatorId')
+      .select([
+        'users.id as userId',
+        'users.name',
+        'users.email',
+        sql<number>`count(*)::int`.as('fileCount'),
+        sql<number>`coalesce(sum(attachments.file_size),0)::bigint`.as('totalBytes'),
+      ])
+      .where('attachments.deletedAt', 'is', null)
+      .where('attachments.workspaceId', '=', workspaceId)
+      .groupBy('users.id')
+      .groupBy('users.name')
+      .groupBy('users.email')
+      .orderBy(sql`2 desc`)
+      .execute();
+  }
+
   async getAttachment(
     id: string,
     workspaceId: string,
