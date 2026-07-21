@@ -15,7 +15,7 @@
 #   APP_URL              (required)  public https URL of the notes app,
 #                                    e.g. https://notes.tudominio.com
 #
-# Domains: set the public domain on the "docmost" (and "admin") service in
+# Domains: set the public domain on the "docmost" service in
 # Coolify's UI (Configuration → Domains). Coolify wires Traefik + HTTPS.
 # No Caddy, no host ports. Old docker-compose.prod.yml + Caddyfile unused.
 
@@ -37,26 +37,10 @@ services:
       DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost?schema=public"
       REDIS_URL: "redis://redis:6379"
     restart: unless-stopped
+    ports:
+      - "${DOCMOST_PORT:-3000}:3000"
     volumes:
       - docmost_storage:/app/data/storage
-
-  # ──────────────────── Admin panel (Notion-styled, login #2) ─────────────────
-  admin:
-    build: ./admin
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: "postgresql://docmost:${DB_PASSWORD}@db:5432/docmost"
-      ADMIN_USER: "${ADMIN_USER:-admin}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
-      ADMIN_JWT_SECRET: "${ADMIN_JWT_SECRET}"
-      DOCMOST_URL: "${APP_URL}"
-      STORAGE_PATH: "/docmost-storage"
-      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
-    restart: unless-stopped
-    volumes:
-      - docmost_storage:/docmost-storage:ro
 
   db:
     image: postgres:16-alpine

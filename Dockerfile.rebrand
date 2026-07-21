@@ -1,21 +1,90 @@
 # Obsidianet — custom-branded build of Docmost
-# Replaces all "Docmost" branding with "Obsidianet" and overlays custom favicons/icons.
+# Hybrid multi-stage build:
+#   1. Extracts compiled EE modules from the official image
+#      (base controllers, AI, SSO, kanban, etc. — no source available)
+#   2. Builds patched open-source code from source
+#   3. Merges both + branding into the final production image
+#
+# Build context: repo root (contains docmost/ subtree, custom-brand/, …)
 
-FROM docmost/docmost:latest
+# ── ee-source ─────────────────────────────────────────────────────────────────
+# Pull the compiled EE modules from the official pre-built image
+FROM docmost/docmost:latest AS ee-source
 
-USER root
+# ── base ──────────────────────────────────────────────────────────────────────
+FROM node:22-slim AS base
+RUN npm install -g pnpm@10.4.0
 
-# ── 1. Replace all "Docmost" text with "Obsidianet" ──
-# Handles: index.html title, manifest.json name, all React UI strings, locale translations
+# ── builder ───────────────────────────────────────────────────────────────────
+FROM base AS builder
+
+WORKDIR /app
+
+# Copy the docmost source (git subtree)
+COPY docmost/ .
+
+# Install all deps (including dev) and build
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+
+# ── installer (production image) ──────────────────────────────────────────────
+FROM base AS installer
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl bash \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ── 1. Compiled EE modules from official image ──
+# These have no TypeScript source in the repo but ship as compiled JS.
+COPY --from=ee-source /app/apps/server/dist/ee  /app/apps/server/dist/ee
+
+# ── 2. Our built artifacts (overwrites any patched files) ──
+COPY --from=builder /app/apps/server/dist       /app/apps/server/dist
+COPY --from=builder /app/apps/client/dist       /app/apps/client/dist
+COPY --from=builder /app/apps/server/package.json   /app/apps/server/package.json
+
+COPY --from=builder /app/packages/editor-ext/dist       /app/packages/editor-ext/dist
+COPY --from=builder /app/packages/editor-ext/package.json  /app/packages/editor-ext/package.json
+COPY --from=builder /app/packages/base-formula/dist       /app/packages/base-formula/dist
+COPY --from=builder /app/packages/base-formula/package.json /app/packages/base-formula/package.json
+
+COPY --from=builder /app/package.json  /app/package.json
+COPY --from=builder /app/pnpm*.yaml    /app/
+COPY --from=builder /app/.npmrc        /app/
+COPY --from=builder /app/patches       /app/patches
+
+# ── 3. Patch EE compiled license.service.js ──
+# feature.guard.js (compiled EE) calls into this service directly.
+# Make its license checks always pass so all EE routes are accessible.
+COPY patch-ee-license.js /tmp/patch-ee-license.js
+RUN node /tmp/patch-ee-license.js && rm /tmp/patch-ee-license.js
+
+# ── 5. Branding: replace "Docmost" with "Obsidianet" ──
 RUN sed -i 's/Docmost/Obsidianet/g' /app/apps/client/dist/index.html \
     && sed -i 's/Docmost/Obsidianet/g' /app/apps/client/dist/manifest.json \
-    && find /app/apps/client/dist/assets -name 'index-*.js' -exec sed -i 's/Docmost/Obsidianet/g' {} + \
-    && find /app/apps/client/dist/locales -name 'translation.json' -exec sed -i 's/Docmost/Obsidianet/g' {} +
+    && find /app/apps/client/dist/assets -name 'index-*.js' \
+       -exec sed -i 's/Docmost/Obsidianet/g' {} + \
+    && find /app/apps/client/dist/locales -name 'translation.json' \
+       -exec sed -i 's/Docmost/Obsidianet/g' {} +
 
-# ── 2. Overlay custom favicon / app icons ──
-COPY custom-brand/icons/     /app/apps/client/dist/icons/
-COPY custom-brand/manifest.json  /app/apps/client/dist/manifest.json
-COPY custom-brand/obsidianet.svg /app/apps/client/dist/vite.svg
+# ── 6. Overlay custom favicon / app icons ──
+COPY custom-brand/icons/            /app/apps/client/dist/icons/
+COPY custom-brand/manifest.json     /app/apps/client/dist/manifest.json
+COPY custom-brand/obsidianet.svg    /app/apps/client/dist/vite.svg
 
-# ── 3. Restore non-root user ──
+# ── 7. Finalise ──
+RUN chown -R node:node /app
+
 USER node
+
+RUN pnpm install --frozen-lockfile --prod
+
+RUN mkdir -p /app/data/storage
+
+VOLUME ["/app/data/storage"]
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]

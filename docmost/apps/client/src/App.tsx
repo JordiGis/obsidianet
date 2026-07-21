@@ -43,6 +43,10 @@ import AuditLogs from "@/ee/audit/pages/audit-logs.tsx";
 import VerifiedPages from "@/ee/page-verification/pages/verified-pages.tsx";
 import TemplateList from "@/ee/template/pages/template-list";
 import TemplateEditor from "@/ee/template/pages/template-editor";
+import AdminDashboard from "@/ee/admin/pages/admin-dashboard";
+import AdminUsers from "@/ee/admin/pages/admin-users";
+import AdminDocuments from "@/ee/admin/pages/admin-documents";
+import AdminFiles from "@/ee/admin/pages/admin-files";
 import FavoritesPage from "@/pages/favorites/favorites-page";
 import AiChat from "@/ee/ai-chat/pages/ai-chat.tsx";
 import VerifyEmail from "@/ee/pages/verify-email.tsx";
@@ -130,6 +134,14 @@ export default function App() {
             <Route path={"verifications"} element={<VerifiedPages />} />
             {!isCloud() && <Route path={"license"} element={<License />} />}
             {isCloud() && <Route path={"billing"} element={<Billing />} />}
+            {!isCloud() && (
+              <>
+                <Route path={"admin/dashboard"} element={<AdminDashboard />} />
+                <Route path={"admin/users"} element={<AdminUsers />} />
+                <Route path={"admin/documents"} element={<AdminDocuments />} />
+                <Route path={"admin/files"} element={<AdminFiles />} />
+              </>
+            )}
           </Route>
         </Route>
 
