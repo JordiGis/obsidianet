@@ -34,7 +34,15 @@ type FieldShellProps = {
 // ref injected into this element; without it the picker renders at (0,0).
 export const FieldShell = forwardRef<HTMLDivElement, FieldShellProps>(
   function FieldShell(
-    { cursor = "default", active, locked, alignTop, className, children, ...rest },
+    {
+      cursor = "default",
+      active,
+      locked,
+      alignTop,
+      className,
+      children,
+      ...rest
+    },
     ref,
   ) {
     return (
@@ -60,13 +68,30 @@ export const FieldShell = forwardRef<HTMLDivElement, FieldShellProps>(
 
 function FieldCheckbox({ value, readOnly, onChange }: FieldProps) {
   const checked = value === true;
+  const toggle = () => {
+    if (!readOnly) onChange(!checked);
+  };
+
   return (
-    <FieldShell>
+    <FieldShell
+      role="checkbox"
+      aria-checked={checked}
+      aria-disabled={readOnly || undefined}
+      tabIndex={readOnly ? undefined : 0}
+      onClick={toggle}
+      onKeyDown={(event) => {
+        if (readOnly || (event.key !== " " && event.key !== "Enter")) return;
+        event.preventDefault();
+        toggle();
+      }}
+    >
       <Checkbox
         size="sm"
         checked={checked}
         disabled={readOnly}
-        onChange={() => onChange(!checked)}
+        onChange={() => {}}
+        tabIndex={-1}
+        styles={{ input: { pointerEvents: "none" } }}
       />
     </FieldShell>
   );
@@ -101,7 +126,12 @@ type DetailFieldProps = {
   onUpdate: (propertyId: string, value: unknown) => void;
 };
 
-export function DetailField({ property, row, readOnly, onUpdate }: DetailFieldProps) {
+export function DetailField({
+  property,
+  row,
+  readOnly,
+  onUpdate,
+}: DetailFieldProps) {
   const descriptor = getDescriptor(property.type);
   const value = descriptor?.systemAccessor
     ? descriptor.systemAccessor(row)

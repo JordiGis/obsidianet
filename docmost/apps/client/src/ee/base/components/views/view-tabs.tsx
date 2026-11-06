@@ -21,6 +21,7 @@ import {
   IconTable,
   IconLink,
   IconLayoutKanban,
+  IconDotsVertical,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
@@ -271,12 +272,8 @@ function ViewTab({
   }, [view.id, reorderEnabled, isEditing]);
 
   const handleTabClick = useCallback(() => {
-    if (isActive) {
-      setMenuOpened((o) => !o);
-    } else {
-      onClick();
-    }
-  }, [isActive, onClick]);
+    onClick();
+  }, [onClick]);
 
   const handleCopyLink = useCallback(() => {
     setMenuOpened(false);
@@ -329,41 +326,57 @@ function ViewTab({
         opacity: isDragging ? 0.4 : 1,
       }}
     >
-      <Popover
-        opened={menuOpened}
-        onChange={setMenuOpened}
-        position="bottom-start"
-        shadow="md"
-        width={180}
-        trapFocus
-        closeOnEscape
-        closeOnClickOutside
-        withinPortal
-      >
-        <Popover.Target>
-          <UnstyledButton
-            onClick={handleTabClick}
-            style={{
-              padding: "2px 10px",
-              borderRadius: "var(--mantine-radius-xl)",
-              fontWeight: isActive ? 600 : 400,
-              backgroundColor: isActive
-                ? "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))"
-                : undefined,
-            }}
-          >
-            <Group gap={6} wrap="nowrap">
-              {view.type === "kanban" ? (
-                <IconLayoutKanban size={14} opacity={isActive ? 1 : 0.5} />
-              ) : (
-                <IconTable size={14} opacity={isActive ? 1 : 0.5} />
-              )}
-              <Text size="sm" lh={1.2} c={isActive ? undefined : "dimmed"}>
-                {view.name}
-              </Text>
-            </Group>
-          </UnstyledButton>
-        </Popover.Target>
+      <Group gap={2} wrap="nowrap">
+        <UnstyledButton
+          onClick={handleTabClick}
+          style={{
+            padding: "6px 10px",
+            minHeight: 40,
+            borderRadius: "var(--mantine-radius-xl)",
+            fontWeight: isActive ? 600 : 400,
+            backgroundColor: isActive
+              ? "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))"
+              : undefined,
+          }}
+        >
+          <Group gap={6} wrap="nowrap">
+            {view.type === "kanban" ? (
+              <IconLayoutKanban size={14} opacity={isActive ? 1 : 0.5} />
+            ) : (
+              <IconTable size={14} opacity={isActive ? 1 : 0.5} />
+            )}
+            <Text size="sm" lh={1.2} c={isActive ? undefined : "dimmed"}>
+              {view.name}
+            </Text>
+          </Group>
+        </UnstyledButton>
+        <Popover
+          opened={menuOpened}
+          onChange={setMenuOpened}
+          position="bottom-start"
+          shadow="md"
+          width={180}
+          trapFocus
+          closeOnEscape
+          closeOnClickOutside
+          withinPortal
+        >
+          <Popover.Target>
+            <UnstyledButton
+              aria-label={t("View options")}
+              onClick={() => setMenuOpened((opened) => !opened)}
+              style={{
+                width: 40,
+                height: 40,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "var(--mantine-radius-xl)",
+              }}
+            >
+              <IconDotsVertical size={16} />
+            </UnstyledButton>
+          </Popover.Target>
       <Popover.Dropdown p={4}>
         <Stack gap={0}>
           {editable && (
@@ -412,6 +425,7 @@ function ViewTab({
         </Stack>
       </Popover.Dropdown>
       </Popover>
+      </Group>
       {closestEdge && <BaseDropEdgeIndicator edge={closestEdge} />}
     </div>
   );

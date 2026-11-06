@@ -226,12 +226,20 @@
   cursor: pointer;
 }
 
+.fieldShell[role="checkbox"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 9px 12px;
+  touch-action: manipulation;
+}
+
 .fieldShellText:hover,
 .fieldShellPointer:hover {
   background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
 }
 
 .fieldShell:focus-within,
+.fieldShell:focus-visible,
 .fieldShellActive,
 .fieldShellActive:hover {
   background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
